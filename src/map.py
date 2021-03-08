@@ -12,6 +12,7 @@ import os
 import zipfile
 import datetime 
 import json
+import pprint
 from collections import Counter,defaultdict
 
 # load keywords
@@ -37,6 +38,7 @@ hashtags = [
 
 # initialize counters
 counter_lang = defaultdict(lambda: Counter())
+counter_country = defaultdict(lambda: Counter())
 
 # open the zipfile
 with zipfile.ZipFile(args.input_path) as archive:
@@ -53,6 +55,7 @@ with zipfile.ZipFile(args.input_path) as archive:
 
                 # load the tweet as a python dictionary
                 tweet = json.loads(line)
+                # pprint.pprint(tweet)
 
                 # convert text to lower case
                 text = tweet['text'].lower()
@@ -60,9 +63,20 @@ with zipfile.ZipFile(args.input_path) as archive:
                 # search hashtags
                 for hashtag in hashtags:
                     lang = tweet['lang']
+                    #print("TEST RIGHT HERE")
+                    #print(tweet['place'])
+                    #print(type(tweet['place']))
+                    #print(tweet['place'].keys())
+                    if tweet['place'] != None:
+                        if 'country_code' in tweet['place'].keys():
+                            country = tweet['place']['country_code']
+                        else:
+                            country = tweet['place']
                     if hashtag in text:
-                        counter_lang[hashtag][lang] += 1
-                    counter_lang['_all'][lang] += 1
+                        counter_lang[hashtag]['lang'] += 1
+                        counter_country[hashtag]['country'] += 1
+                    counter_lang['_all']['lang'] += 1
+                    counter_country['_all']['country'] += 1
 
 # open the outputfile
 try:
@@ -72,7 +86,11 @@ except FileExistsError:
 output_path_base = os.path.join(args.output_folder,os.path.basename(args.input_path))
 
 output_path_lang = output_path_base+'.lang'
+output_path_country = output_path_base+'.country'
 print('saving',output_path_lang)
+print('saving',output_path_country)
 with open(output_path_lang,'w') as f:
     f.write(json.dumps(counter_lang))
+with open(output_path_country, 'w') as f:
+    f.write(json.dumps(counter_country))
 
